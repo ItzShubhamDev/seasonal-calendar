@@ -32,8 +32,13 @@ const seasonImages = {
     winter,
 };
 
-const Calendar = () => {
-    const [date, setDate] = useState(new Date());
+const Calendar = ({
+    date,
+    setDate,
+}: {
+    date: Date;
+    setDate: React.Dispatch<React.SetStateAction<Date>>;
+}) => {
     const [monthArray, setMonthArray] = useState<number[][]>([]);
     const month = date.getMonth();
     const year = date.getFullYear();
@@ -100,7 +105,7 @@ const Calendar = () => {
 
     return (
         <div
-            className="md:p-8 p-5 w-full h-screen"
+            className="md:p-8 p-5 w-full h-full rounded-tl-2xl"
             style={{
                 backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${seasonImages[season]})`,
                 backgroundSize: "cover",
@@ -178,6 +183,15 @@ const Calendar = () => {
                                 ))}
                             </tr>
                         ))}
+                        {monthArray.length < 6 && (
+                            <tr>
+                                {Array.from({ length: 7 }).map((_, index) => (
+                                    <td key={index} className="py-2">
+                                        <div className="w-10 h-10 rounded-full mx-auto"></div>
+                                    </td>
+                                ))}
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
