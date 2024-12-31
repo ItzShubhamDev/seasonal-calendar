@@ -53,7 +53,7 @@ type Weather = {
 const app = express();
 
 app.get("/holidays", async (req: Request, res: Response) => {
-    const ipres = await fetch(`http://ip-api.com/json/152.59.173.61`);
+    const ipres = await fetch(`http://ip-api.com/json/${req.ip}`);
     const ipdata = (await ipres.json()) as Ip;
 
     if (ipdata.status !== "success") {
@@ -114,7 +114,7 @@ app.get("/holidays", async (req: Request, res: Response) => {
 });
 
 app.get("/weather", async (req: Request, res: Response) => {
-    const ipres = await fetch(`http://ip-api.com/json/152.59.173.61`);
+    const ipres = await fetch(`http://ip-api.com/json/${req.ip}`);
     const ip = (await ipres.json()) as Ip;
 
     if (ip.status !== "success") {
