@@ -53,16 +53,17 @@ type Weather = {
 const app = express();
 
 app.get("/holidays", async (req: Request, res: Response) => {
-    const ipres = await fetch(`http://ip-api.com/json/${req.ip}`);
-    const ipdata = (await ipres.json()) as Ip;
+    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
+    const ipres = await fetch(`http://ip-api.com/json/${clientIp}`);
+    const ip = (await ipres.json()) as Ip;
 
-    if (ipdata.status !== "success") {
-        if (ipdata.message) {
-            return res.status(400).json({ error: ipdata.message });
+    if (ip.status !== "success") {
+        if (ip.message) {
+            return res.status(400).json({ error: ip.message });
         }
         return res.status(400).json({ error: "Failed to get location" });
     }
-    const country = ipdata.countryCode;
+    const country = ip.countryCode;
 
     const customCountries = Object.keys(customHolidays);
 
@@ -114,7 +115,8 @@ app.get("/holidays", async (req: Request, res: Response) => {
 });
 
 app.get("/weather", async (req: Request, res: Response) => {
-    const ipres = await fetch(`http://ip-api.com/json/${req.ip}`);
+    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
+    const ipres = await fetch(`http://ip-api.com/json/${clientIp}`);
     const ip = (await ipres.json()) as Ip;
 
     if (ip.status !== "success") {
