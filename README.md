@@ -6,7 +6,16 @@ A Simple Calendar with seasonal backgrounds
 
 -   Detailed information on seasonal events
 -   Customizable event notifications
--   Integration with weather and tide data
+-   ~~Integration with weather and tide data~~
+-   ~~Public Holidays~~
+
+## Country Not Available in date.nager.at
+
+Download holidays using [Abstract API](holidays.abstractapi.com)
+
+1. Configure `index.ts`
+2. Run `npx tsx index.ts` to download holidays
+3. If anything goes wrong, there should a backup in backups/
 
 ## Installation
 
