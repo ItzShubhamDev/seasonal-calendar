@@ -47,4 +47,4 @@ npm run dev
 
 ## Usage
 
-Once the application is running, you can access the calendar through your web browser at `http://localhost:5173`.
+Once the application is running, you can access the calendar through your web browser at `http://localhost:3000`.
