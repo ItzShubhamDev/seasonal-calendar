@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction } from "express";
 import ViteExpress from "vite-express";
 import { Request, Response } from "express";
 import countries from "./countries.json";
@@ -7,58 +7,20 @@ import weathers from "./weathers.json";
 import multer from "multer";
 import { config } from "dotenv";
 import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
+import { connect } from "./db";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import type { Ip, Holiday, Weather, Event as EventResponse } from "./types";
+import { User } from "./schemas/User";
+import { Event } from "./schemas/Event";
 
 const upload = multer();
 config();
 
 let ai: GenerativeModel;
 
-type Ip = {
-    status: string;
-    countryCode: string;
-    regionName: string;
-    city: string;
-    lat: number;
-    lon: number;
-    region: string;
-    message?: string;
-};
-
-type Holiday = {
-    date: string;
-    name: string;
-    types: string[];
-};
-
-type Weather = {
-    daily_units: {
-        time: string;
-        temperature_2m_max: string;
-        temperature_2m_min: string;
-    };
-    current_units: {
-        temperature_2m: string;
-        apparent_temperature: string;
-        weather_code: string;
-        relative_humidity_2m: string;
-        wind_speed_10m: string;
-    };
-    daily: {
-        time: string[];
-        temperature_2m_max: number[];
-        temperature_2m_min: number[];
-    };
-    current: {
-        temperature_2m: number;
-        apparent_temperature: number;
-        weather_code: number;
-        relative_humidity_2m: number;
-        wind_speed_10m: number;
-    };
-    error?: boolean;
-};
-
 const app = express();
+app.use(express.json());
 
 if (process.env.GEMINI_KEY) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
@@ -71,8 +33,38 @@ if (process.env.GEMINI_KEY) {
     });
     ai = model;
 } else {
-    console.log("No Gemini key found Image parsing will not work");
+    console.error("No Gemini key found Image parsing will not work");
 }
+
+if (process.env.MONGODB_URI) {
+    connect();
+} else {
+    console.error("No MongoDB URI found Database will not work");
+}
+
+const authSecret = process.env.AUTH_SECRET;
+
+if (!authSecret) {
+    console.error("No auth secret found Auth will not work");
+}
+
+const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+    let token = req.headers["authorization"];
+    if (!token) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    if (token.startsWith("Bearer ")) {
+        token = token.slice(7, token.length);
+    }
+
+    jwt.verify(token, authSecret!, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        req["user"] = decoded;
+        next();
+    });
+};
 
 app.get("/holidays", async (req: Request, res: Response) => {
     const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
@@ -209,15 +201,141 @@ app.post(
 
             const response = result.response.text();
             const data = response.split("```")[1].replace("json", "");
-            const json = JSON.parse(data);
+            const json = JSON.parse(data) as EventResponse[];
 
-            return res.status(200).json(json);
+            if (req.headers["authorization"]) {
+                try {
+                    let token = req.headers["authorization"] as string;
+                    if (token.startsWith("Bearer ")) {
+                        token = token.slice(7, token.length);
+                    }
+                    const decoded = jwt.verify(token, authSecret!) as {
+                        email: string;
+                        id: string;
+                    };
+                    for (const event of json) {
+                        if (event.date) {
+                            const ev = await Event.findOne({
+                                date: new Date(event.date),
+                                event: event.event,
+                                userId: decoded.id,
+                            });
+                            if (ev) {
+                                continue;
+                            }
+                            await Event.create({
+                                date: new Date(event.date),
+                                event: event.event,
+                                userId: decoded.id,
+                            });
+                        }
+                    }
+
+                    const events = await Event.find({ userId: decoded.id });
+                    return res
+                        .status(200)
+                        .json({ authenticated: false, events });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            return res.status(200).json({ authenticated: false, events: json });
         } catch (error) {
             console.log(error);
             return res.status(400).json({ error: "Failed to parse image" });
         }
     }
 );
+
+app.get("/events", verifyToken, async (req, res) => {
+    try {
+        const events = await Event.find({ userId: req["user"].id });
+        res.status(200).json({ events });
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.post("/events", verifyToken, async (req, res) => {
+    try {
+        const event = await Event.create({
+            date: req.body.date,
+            event: req.body.event,
+            userId: req["user"].id,
+        });
+        res.status(201).json({ event });
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.delete("/events/:id", verifyToken, async (req, res) => {
+    try {
+        const event = await Event.findOne({
+            _id: req.params.id,
+            userId: req["user"].id,
+        });
+        if (!event) {
+            return res.status(404).json({ error: "Event not found" });
+        }
+        await event.deleteOne();
+        res.status(200).json({ message: "Event deleted successfully" });
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.post("/auth/register", async (req: Request, res: Response) => {
+    try {
+        const existingUser = await User.findOne({ email: req.body.email });
+        if (existingUser) {
+            return res.status(400).json({ error: "Email already exists" });
+        }
+
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        await User.create({
+            email: req.body.email,
+            password: hashedPassword,
+        });
+
+        return res
+            .status(201)
+            .json({ message: "User registered successfully" });
+    } catch {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.post("/auth/login", async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.body.email });
+        if (!user) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        const passwordMatch = await bcrypt.compare(
+            req.body.password,
+            user.password
+        );
+        if (!passwordMatch) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        const token = jwt.sign(
+            { email: user.email, id: user._id.toString() },
+            authSecret!,
+            { expiresIn: "30d" }
+        );
+        res.status(200).json({ token });
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.get("/auth/user", verifyToken, async (req, res) => {
+    res.status(200).json(req["user"]);
+});
 
 ViteExpress.listen(app, 3000, () =>
     console.log("Server is listening on port 3000")

@@ -1,5 +1,6 @@
 import { Droplet, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const weatherData = [
     {
@@ -97,17 +98,14 @@ const Weather = () => {
         fetch("/weather")
             .then((res) => res.json())
             .then((data) => {
-                if (data.error) {
-                    console.error(data.error);
-                    setWeather(null);
-                    setLoading(false);
-                    return;
-                }
+                if (data.error) return toast.error(data.error);
                 setWeather(data);
                 setLoading(false);
             })
-            .catch((error) => {
-                console.error(error);
+            .catch(() => {
+                toast.error(
+                    "An error occurred while fetching the weather data"
+                );
                 setLoading(false);
             });
     }, []);
