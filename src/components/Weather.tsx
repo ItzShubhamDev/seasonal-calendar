@@ -91,12 +91,18 @@ type WeatherData = {
 const Weather = () => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [icon, setIcon] = useState<string | null>(null);
+    const [icon, setIcon] = useState<string | null>("Sun%20Behind%20Cloud.png");
 
     useEffect(() => {
         fetch("/weather")
             .then((res) => res.json())
             .then((data) => {
+                if (data.error) {
+                    console.error(data.error);
+                    setWeather(null);
+                    setLoading(false);
+                    return;
+                }
                 setWeather(data);
                 setLoading(false);
             })
@@ -125,7 +131,7 @@ const Weather = () => {
                 </>
             ) : (
                 <>
-                    <div className="h-full max-w-sm flex w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
+                    <div className="h-full lg:max-w-sm flex w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
                         <div>
                             <div className="flex items-center justify-between">
                                 <div className="text-4xl font-bold text-yellow-300">
@@ -178,7 +184,7 @@ const Weather = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="h-full max-w-xl flex flex-col space-y-4 w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
+                    <div className="h-full lg:max-w-xl flex flex-col space-y-4 w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
                         <h1 className="text-2xl font-medium text-gray-100 text-center">
                             Weekly Forecast
                         </h1>

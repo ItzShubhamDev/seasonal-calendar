@@ -8,14 +8,10 @@ function App() {
     const [date, setDate] = useState(new Date());
 
     return (
-        <div className="flex bg-gray-800">
-            <div className="w-64 h-screen">
-                <div className="flex items-center justify-center h-full text-white p-4">
-                    <Holidays date={date} />
-                </div>
-            </div>
-            <div className="min-h-screen flex flex-col flex-grow">
-                <div className="h-full w-full flex items-center py-5 pr-5 space-x-5 flex-grow">
+        <div className="lg:flex bg-gray-800">
+            <Holidays date={date} />
+            <div className="min-h-screen flex flex-col flex-grow p-5 lg:p-0 space-y-5 lg:space-y-0">
+                <div className="h-full w-full lg:flex items-center lg:p-5 lg:pl-0 space-y-5 lg:space-y-0 lg:space-x-5 lg:flex-grow">
                     <Weather />
                     <Clock />
                 </div>

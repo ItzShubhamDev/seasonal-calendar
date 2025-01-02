@@ -105,7 +105,7 @@ const Calendar = ({
 
     return (
         <div
-            className="md:p-8 p-5 w-full h-full rounded-tl-2xl"
+            className="md:p-8 p-4 lg:m-0 lg:w-full h-full rounded-lg lg:rounded-none lg:rounded-tl-2xl"
             style={{
                 backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${seasonImages[season]})`,
                 backgroundSize: "cover",
@@ -113,40 +113,45 @@ const Calendar = ({
             }}
         >
             <Particles season={season} />
-            <div className="px-16 flex items-center justify-between">
-                <span className="focus:outline-none text-4xl font-bold text-gray-100">
+            <div className="px-2 lg:px-16 flex items-center justify-between">
+                <span className="focus:outline-none text-lg sm:text-2xl lg:text-4xl font-bold text-gray-100">
                     {monthNames[month]} {year}
                 </span>
                 <div className="flex items-center space-x-2">
                     <button
-                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full px-4 py-2"
+                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full px-4 sm:py-1 lg:py-2"
                         onClick={() => setDate(new Date())}
                     >
                         Today
                     </button>
                     <button
-                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full p-2"
+                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full sm:p-1 lg:p-2"
                         onClick={prevMonth}
                     >
                         <ChevronLeft />
                     </button>
                     <button
-                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full p-2"
+                        className="hover:border-gray-100 text-gray-100 border-2 border-gray-400 rounded-full sm:p-1 lg:p-2"
                         onClick={nextMonth}
                     >
                         <ChevronRight />
                     </button>
                 </div>
             </div>
-            <div className="flex items-center justify-between pt-12 overflow-x-auto">
+            <div className="flex items-center justify-between pt-12">
                 <table className="w-full">
                     <thead>
                         <tr>
                             {week.map((day) => (
                                 <th key={day}>
                                     <div className="w-full flex justify-center">
-                                        <p className="text-2xl font-medium text-center text-gray-100">
-                                            {day}
+                                        <p className="text-sm sm:text-lg lg:text-2xl font-medium text-center text-gray-100">
+                                            <span className="hidden lg:inline">
+                                                {day}
+                                            </span>
+                                            <span className="lg:hidden">
+                                                {day.slice(0, 3)}
+                                            </span>
                                         </p>
                                     </div>
                                 </th>
@@ -157,10 +162,10 @@ const Calendar = ({
                         {monthArray.map((week, index) => (
                             <tr key={index}>
                                 {week.map((day, index) => (
-                                    <td key={index} className="py-2">
+                                    <td key={index} className="sm:py-2">
                                         <div
                                             className={
-                                                "w-10 h-10 rounded-full mx-auto flex items-center justify-center " +
+                                                "size-6 sm:size-8 lg:size-10 rounded-full mx-auto flex items-center justify-center " +
                                                 `${
                                                     day ===
                                                         new Date().getDate() &&
@@ -175,7 +180,7 @@ const Calendar = ({
                                                 }`
                                             }
                                         >
-                                            <p className="text-2xl font-medium text-gray-100">
+                                            <p className="text-sm sm:text-lg lg:text-2xl font-medium text-gray-100">
                                                 {day}
                                             </p>
                                         </div>
@@ -186,8 +191,8 @@ const Calendar = ({
                         {monthArray.length < 6 && (
                             <tr>
                                 {Array.from({ length: 7 }).map((_, index) => (
-                                    <td key={index} className="py-2">
-                                        <div className="w-10 h-10 rounded-full mx-auto"></div>
+                                    <td key={index} className="lg:py-2">
+                                        <div className="size-6 sm:size-8 lg:size-10 rounded-full mx-auto"></div>
                                     </td>
                                 ))}
                             </tr>

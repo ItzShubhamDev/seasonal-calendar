@@ -4,6 +4,14 @@ import { Request, Response } from "express";
 import countries from "./countries.json";
 import customHolidays from "./holidays.json";
 import weathers from "./weathers.json";
+import multer from "multer";
+import { config } from "dotenv";
+import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
+
+const upload = multer();
+config();
+
+let ai: GenerativeModel;
 
 type Ip = {
     status: string;
@@ -51,6 +59,20 @@ type Weather = {
 };
 
 const app = express();
+
+if (process.env.GEMINI_KEY) {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
+    const date = new Date();
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+        systemInstruction: `Your are a professional image reader made specifically for taking out dates from the image. Extract the dates from the images and return in a json as { 'date': <Date>, 'event': <Event> }, if year is missing, set year to ${date.getFullYear()}, if month is missing set month to ${
+            date.getMonth() + 1
+        }, if date, month and year are missing, set date to null.`,
+    });
+    ai = model;
+} else {
+    console.log("No Gemini key found Image parsing will not work");
+}
 
 app.get("/holidays", async (req: Request, res: Response) => {
     const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
@@ -156,6 +178,46 @@ app.get("/weather", async (req: Request, res: Response) => {
         })),
     });
 });
+
+app.post(
+    "/upload",
+    upload.single("image"),
+    async (req: Request, res: Response) => {
+        if (!ai) {
+            return res.status(400).json({ error: "AI is not available" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: "Image is required" });
+        }
+        const validTypes = ["image/png", "image/jpeg", "image/webp"];
+        if (!validTypes.includes(req.file.mimetype)) {
+            return res.status(400).json({ error: "Invalid file type" });
+        }
+
+        const image = req.file.buffer;
+        try {
+            const result = await ai.generateContent([
+                {
+                    inlineData: {
+                        data: Buffer.from(image).toString("base64"),
+                        mimeType: req.file.mimetype,
+                    },
+                },
+                "date",
+            ]);
+
+            const response = result.response.text();
+            const data = response.split("```")[1].replace("json", "");
+            const json = JSON.parse(data);
+
+            return res.status(200).json(json);
+        } catch (error) {
+            console.log(error);
+            return res.status(400).json({ error: "Failed to parse image" });
+        }
+    }
+);
 
 ViteExpress.listen(app, 3000, () =>
     console.log("Server is listening on port 3000")

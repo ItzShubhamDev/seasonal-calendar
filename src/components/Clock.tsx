@@ -32,8 +32,8 @@ const Clock = () => {
     }, [hours]);
 
     return (
-        <div className="h-full flex flex-col items-center justify-center space-y-2 w-fit bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4 px-8">
-            <div className="text-white font-mono text-5xl">
+        <div className="hidden h-full xl:flex flex-col items-center justify-center space-y-2 w-fit bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4 px-8">
+            <div className="text-white font-mono  text-2xl 2xl:text-5xl">
                 {time.toTimeString().split(" ")[0]}
             </div>
             <img
