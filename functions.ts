@@ -5,6 +5,7 @@ import weathers from "./weathers.json";
 import holidays from "./holidays.json";
 import countries from "./countries.json";
 import cities from "./cities.json";
+import { User } from "./schemas/User";
 
 config();
 
@@ -117,14 +118,10 @@ export async function verifyJWT(token: string) {
     try {
         const decoded = jwt.verify(token, authSecret) as {
             id: string;
-            email: string;
-            city: string | null;
-            country: string | null;
-            region: string | null;
-            latitude: string | null;
-            longitude: string | null;
         };
-        return decoded;
+        const user = User.findById(decoded.id);
+        if (!user) return null;
+        return user;
     } catch {
         return null;
     }
