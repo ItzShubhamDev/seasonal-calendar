@@ -98,7 +98,7 @@ type User = {
     longitude: number;
 };
 
-const Weather = ({ user }: { user: User }) => {
+const Weather = ({ user }: { user: User | null }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
     const [icon, setIcon] = useState<string | null>("Sun%20Behind%20Cloud.png");
@@ -106,15 +106,13 @@ const Weather = ({ user }: { user: User }) => {
     useEffect(() => {
         const getWeather = async () => {
             try {
-                const params =
-                    user.city !== ""
-                        ? `?lat=${user.latitude}&lon=${user.longitude}&city=${user.city}&region=${user.region}`
-                        : "";
+                const params = user
+                    ? `?lat=${user.latitude}&lon=${user.longitude}&city=${user.city}&region=${user.region}`
+                    : "";
                 const url = `/weather${params}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 if (data.error) return toast.error(data.error);
-                console.log(url, data.data);
                 setWeather(data.data);
                 setLoading(false);
             } catch {

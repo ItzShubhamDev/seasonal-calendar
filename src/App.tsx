@@ -8,17 +8,19 @@ import LoginModal from "./components/LoginModal";
 import { LogIn, X } from "lucide-react";
 import UpdateUser from "./components/UpdateUser";
 
+type User = {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+};
+
 function App() {
     const [date, setDate] = useState(new Date());
     const [alert, setAlert] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
-    const [user, setUser] = useState({
-        city: "",
-        region: "",
-        country: "",
-        latitude: 0,
-        longitude: 0,
-    });
+    const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
         try {
@@ -79,7 +81,7 @@ function App() {
                 </div>
             </div>
             <LoginModal open={open} onClose={() => setOpen(false)} />
-            <UpdateUser user={user} setUser={setUser} />
+            {user && <UpdateUser user={user} setUser={setUser} />}
             <ToastContainer
                 pauseOnFocusLoss={false}
                 pauseOnHover={false}

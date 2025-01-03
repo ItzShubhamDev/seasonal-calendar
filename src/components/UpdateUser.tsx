@@ -24,7 +24,7 @@ export default function UpdateUser({
     setUser,
 }: {
     user: User;
-    setUser: React.Dispatch<React.SetStateAction<User>>;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }) {
     const [internalUser, setInternalUser] = useState(user);
     const [spinning, setSpinning] = useState(false);
@@ -39,9 +39,9 @@ export default function UpdateUser({
 
     useEffect(() => {
         if (!user || user.city === "") return;
-        setCountry(user.country);
-        setRegion(user.region);
-        setCityName(user.city);
+        setCountry(user.country || "");
+        setRegion(user.region || "");
+        setCityName(user.city || "");
     }, [user]);
 
     useEffect(() => {
@@ -62,10 +62,11 @@ export default function UpdateUser({
             if (res.status === 200) {
                 const data = await res.json();
                 setRegions(data.data);
+                if (!data.data.includes(region)) setRegion(data.data[0]);
             }
         };
         getRegions();
-    }, [country]);
+    }, [country, region]);
 
     useEffect(() => {
         const getCities = async () => {
@@ -76,13 +77,16 @@ export default function UpdateUser({
             if (res.status === 200) {
                 const data = (await res.json()) as { data: City[] };
                 setCities(data.data);
+                if (!data.data.find((city) => city.name === cityName))
+                    setCityName(data.data[0].name);
             }
         };
         getCities();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [country, region]);
 
     useEffect(() => {
-        if (cityName.length === 0 || cities.length === 0) return;
+        if (cityName === "" || cities.length === 0) return;
         setCity(cities.find((city) => city.name === cityName));
     }, [cityName, cities]);
 
@@ -165,11 +169,7 @@ export default function UpdateUser({
                             className="w-1/3 p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
                             value={internalUser.city}
                             onChange={(e) =>
-                                setCity(
-                                    cities.find(
-                                        (city) => city.name === e.target.value
-                                    )
-                                )
+                                setCityName(e.target.value as string)
                             }
                         >
                             {cities.map((city) => (
@@ -214,12 +214,12 @@ export default function UpdateUser({
                 </form>
             </Modal>
             <button
-                className={`fixed z-100 bottom-0 right-0 p-5 hover:rotate-90 duration-700 ${
+                className={`fixed z-100 bottom-0 right-0 p-3 hover:rotate-90 duration-700 ${
                     spinning ? "!rotate-180" : ""
                 }`}
                 onClick={handleClick}
             >
-                <Settings className="h-10 w-10 text-white" />
+                <Settings className="h-8 w-8 text-white" />
             </button>
         </>
     );

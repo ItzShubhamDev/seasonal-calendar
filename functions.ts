@@ -81,11 +81,11 @@ export async function getWeather(
     );
 
     const weather = (await res.json()) as Weather;
-    const w = weathers[weather.current.weather_code] || "";
-
     if (weather.error) {
         return null;
     }
+
+    const w = weathers[weather.current.weather_code] || "";
 
     const currentDate = new Date().toISOString().split("T")[0];
     const index = weather.daily.time.indexOf(currentDate);

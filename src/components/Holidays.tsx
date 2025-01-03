@@ -25,7 +25,7 @@ type User = {
     longitude: number;
 };
 
-const Holidays = ({ date, user }: { date: Date; user: User }) => {
+const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
     const [loading, setLoading] = useState(true);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [hidden, setHidden] = useState(true);
@@ -40,7 +40,7 @@ const Holidays = ({ date, user }: { date: Date; user: User }) => {
             try {
                 const url =
                     `/holidays?year=${date.getFullYear()}` +
-                    (user.country ? `&country=${user.country}` : "");
+                    (user ? `&country=${user.country}` : "");
                 const res = await fetch(url);
                 const data = await res.json();
                 if (data.error) {
