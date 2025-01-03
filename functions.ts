@@ -110,7 +110,7 @@ export async function getWeather(
 
 export async function verifyJWT(token: string) {
     const authSecret = process.env.AUTH_SECRET;
-    if (!authSecret || !token) return null;
+    if (!authSecret || authSecret.length === 0 || !token) return null;
     if (token.startsWith("Bearer ")) {
         token = token.slice(7, token.length);
     }

@@ -7,14 +7,16 @@ const uri = process.env.MONGODB_URI;
 
 export async function connect() {
     if (!uri) {
-        throw new Error("MongoDB token is not provided");
+        console.error("Missing MONGODB_URI");
+        process.exit(1);
     }
     mongoose
-        .connect(uri, {})
+        .connect(uri)
         .then(() => {
             console.log("Connected to MongoDB");
         })
         .catch((err) => {
             console.error(err);
+            process.exit(1);
         });
 }

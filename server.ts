@@ -5,6 +5,7 @@ import multer from "multer";
 import { config } from "dotenv";
 import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
 import { connect } from "./db";
+import "./cron";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import type { Event as EventResponse } from "./types";
