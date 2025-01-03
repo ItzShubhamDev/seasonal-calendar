@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
 import AddEventModal from "./AddEventModal";
 import { toast } from "react-toastify";
+import { fetch } from "../functions";
 
 type Holiday = {
     date: string;
@@ -16,7 +17,15 @@ type Event = {
     _id?: string;
 };
 
-const Holidays = ({ date }: { date: Date }) => {
+type User = {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+};
+
+const Holidays = ({ date, user }: { date: Date; user: User }) => {
     const [loading, setLoading] = useState(true);
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [hidden, setHidden] = useState(true);
@@ -26,36 +35,37 @@ const Holidays = ({ date }: { date: Date }) => {
     const ref = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setLoading(true);
-        fetch(`/holidays?year=${date.getFullYear()}`)
-            .then((res) => res.json())
-            .then((data) => {
+        const getHolidays = async () => {
+            setLoading(true);
+            try {
+                const url =
+                    `/holidays?year=${date.getFullYear()}` +
+                    (user.country ? `&country=${user.country}` : "");
+                const res = await fetch(url);
+                const data = await res.json();
                 if (data.error) {
                     setLoading(false);
                     return toast.error(data.error);
                 }
-                const holidays = data.filter(
+                const holidays = data.data.filter(
                     (holiday: Holiday) =>
                         new Date(holiday.date).getMonth() === date.getMonth()
                 );
                 setHolidays(holidays);
                 setLoading(false);
-            })
-            .catch(() => {
+            } catch {
                 setLoading(false);
-            });
-    }, [date]);
+            }
+        };
+        getHolidays();
+    }, [date, user]);
 
     useEffect(() => {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        fetch("/events", {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-            .then((res) => res.json())
-            .then((data) => {
+        const getEvents = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch("/events");
+                const data = await res.json();
                 if (data.error) {
                     const events = JSON.parse(
                         localStorage.getItem("events") || "[]"
@@ -63,10 +73,14 @@ const Holidays = ({ date }: { date: Date }) => {
                     setEvents(events);
                     return;
                 } else {
-                    setEvents(data.events);
+                    setEvents(data.data);
                 }
                 setLoading(false);
-            });
+            } catch {
+                setLoading(false);
+            }
+        };
+        getEvents();
     }, []);
 
     const upload = () => {
@@ -104,20 +118,20 @@ const Holidays = ({ date }: { date: Date }) => {
 
             if (data.authenticated) {
                 if (events.length > 0) {
-                    return setEvents([...events, data.events]);
+                    return setEvents([...events, data.data]);
                 }
-                setEvents([data.events]);
+                setEvents([data.data]);
             }
 
             if (!data.authenticated) {
-                const events = data.events.map((e: Event) => {
+                const events = data.data.map((e: Event) => {
                     e._id = randomId();
                     return e;
                 });
                 if (events.length > 0) {
-                    return setEvents([...events, data.events]);
+                    return setEvents([...events, data.data]);
                 }
-                setEvents([data.events]);
+                setEvents([data.data]);
                 const oldEvents = JSON.parse(
                     localStorage.getItem("events") || "[]"
                 );
@@ -150,6 +164,14 @@ const Holidays = ({ date }: { date: Date }) => {
             }
         }
     };
+
+    const monthlyEvents = events.filter((e) => {
+        const d = new Date(e.date);
+        return (
+            d.getMonth() === date.getMonth() &&
+            d.getFullYear() === date.getFullYear()
+        );
+    });
 
     return (
         <div
@@ -189,26 +211,12 @@ const Holidays = ({ date }: { date: Date }) => {
                             onChange={handleUpload}
                         />
                         <div className="flex-grow overflow-y-scroll my-2">
-                            {events.filter((e) => {
-                                const d = new Date(e.date);
-                                return (
-                                    d.getMonth() === date.getMonth() &&
-                                    d.getFullYear() === date.getFullYear()
-                                );
-                            }).length === 0 && (
+                            {monthlyEvents.length === 0 ? (
                                 <p className="text-gray-100 text-center">
                                     No events for this month
                                 </p>
-                            )}
-                            {events
-                                .filter((e) => {
-                                    const d = new Date(e.date);
-                                    return (
-                                        d.getMonth() === date.getMonth() &&
-                                        d.getFullYear() === date.getFullYear()
-                                    );
-                                })
-                                .map((event, i) => (
+                            ) : (
+                                monthlyEvents.map((event, i) => (
                                     <div key={i} className="py-2">
                                         <p className="text-lg font-medium text-gray-100">
                                             {event.event}
@@ -219,7 +227,8 @@ const Holidays = ({ date }: { date: Date }) => {
                                                 : event.date}
                                         </p>
                                     </div>
-                                ))}
+                                ))
+                            )}
                         </div>
                         <button
                             className="hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
@@ -228,7 +237,7 @@ const Holidays = ({ date }: { date: Date }) => {
                             View All Events
                         </button>
                     </div>
-                    <div className="w-full flex flex-col h-1/2">
+                    <div className="w-full flex flex-col h-1/2 mt-2">
                         <div className="w-full flex justify-between">
                             <span className="text-2xl font-medium text-gray-100 text-center">
                                 Holidays

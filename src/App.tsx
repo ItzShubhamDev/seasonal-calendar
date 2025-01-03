@@ -6,11 +6,19 @@ import Weather from "./components/Weather";
 import Clock from "./components/Clock";
 import LoginModal from "./components/LoginModal";
 import { LogIn, X } from "lucide-react";
+import UpdateUser from "./components/UpdateUser";
 
 function App() {
     const [date, setDate] = useState(new Date());
     const [alert, setAlert] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
+    const [user, setUser] = useState({
+        city: "",
+        region: "",
+        country: "",
+        latitude: 0,
+        longitude: 0,
+    });
 
     useEffect(() => {
         try {
@@ -24,6 +32,10 @@ function App() {
                     setAlert(
                         "You are not logged in. Unauthorized access can cause loss of data."
                     );
+                } else if (res.status === 200) {
+                    res.json().then((data) => {
+                        setUser(data);
+                    });
                 }
             });
         } catch {
@@ -35,10 +47,10 @@ function App() {
 
     return (
         <div className="lg:flex bg-gray-800">
-            <Holidays date={date} />
+            <Holidays date={date} user={user} />
             <div className="min-h-screen flex flex-col flex-grow p-5 lg:p-0 space-y-5 lg:space-y-0">
                 <div className="h-full w-full lg:flex items-center lg:p-5 lg:pl-0 space-y-5 lg:space-y-0 lg:space-x-5 lg:flex-grow">
-                    <Weather />
+                    <Weather user={user} />
                     <Clock />
                 </div>
                 <Calendar date={date} setDate={setDate} />
@@ -67,7 +79,13 @@ function App() {
                 </div>
             </div>
             <LoginModal open={open} onClose={() => setOpen(false)} />
-            <ToastContainer />
+            <UpdateUser user={user} setUser={setUser} />
+            <ToastContainer
+                pauseOnFocusLoss={false}
+                pauseOnHover={false}
+                theme="dark"
+                toastClassName={"bg-gray-800 text-white"}
+            />
         </div>
     );
 }

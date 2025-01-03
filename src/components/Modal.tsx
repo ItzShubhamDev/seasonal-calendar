@@ -13,7 +13,7 @@ export default function Modal({
 }) {
     return (
         <div
-            className={`fixed inset-0 w-screen h-screen backdrop-blur flex justify-center items-center duration-500 ease-in-out
+            className={`z-50 fixed inset-0 w-screen h-screen backdrop-blur flex justify-center items-center duration-500 ease-in-out
         ${open ? "translate-y-0" : "-translate-y-full"}`}
         >
             <div className="flex flex-col max-w-2xl w-full bg-gray-800 text-white p-2 rounded-xl">

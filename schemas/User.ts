@@ -10,6 +10,26 @@ const UserSchema = new Schema(
             type: String,
             required: true,
         },
+        city: {
+            type: String,
+            default: null,
+        },
+        region: {
+            type: String,
+            default: null,
+        },
+        country: {
+            type: String,
+            default: null,
+        },
+        latitude: {
+            type: Number,
+            default: null,
+        },
+        longitude: {
+            type: Number,
+            default: null,
+        },
     },
     { timestamps: true }
 );

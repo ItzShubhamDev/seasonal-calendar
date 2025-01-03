@@ -1,18 +1,24 @@
 import express, { NextFunction } from "express";
 import ViteExpress from "vite-express";
 import { Request, Response } from "express";
-import countries from "./countries.json";
-import customHolidays from "./holidays.json";
-import weathers from "./weathers.json";
 import multer from "multer";
 import { config } from "dotenv";
 import { GenerativeModel, GoogleGenerativeAI } from "@google/generative-ai";
 import { connect } from "./db";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import type { Ip, Holiday, Weather, Event as EventResponse } from "./types";
+import type { Event as EventResponse } from "./types";
 import { User } from "./schemas/User";
 import { Event } from "./schemas/Event";
+import {
+    getCities,
+    getCountries,
+    getHolidays,
+    getIP,
+    getRegions,
+    getWeather,
+    verifyJWT,
+} from "./functions";
 
 const upload = multer();
 config();
@@ -22,153 +28,138 @@ let ai: GenerativeModel;
 const app = express();
 app.use(express.json());
 
-if (process.env.GEMINI_KEY) {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
+const { GEMINI_KEY, MONGODB_URI, AUTH_SECRET } = process.env;
+
+if (GEMINI_KEY) {
+    const genAI = new GoogleGenerativeAI(GEMINI_KEY);
     const date = new Date();
     const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash-exp",
         systemInstruction: `Your are a professional image reader made specifically for taking out dates from the image. Extract the dates from the images and return in a json as { 'date': <Date>, 'event': <Event> }, if year is missing, set year to ${date.getFullYear()}, if month is missing set month to ${
             date.getMonth() + 1
-        }, if date, month and year are missing, set date to null.`,
+        }, if date, month and year are missing, don't return the date`,
     });
     ai = model;
 } else {
     console.error("No Gemini key found Image parsing will not work");
 }
 
-if (process.env.MONGODB_URI) {
+if (MONGODB_URI) {
     connect();
 } else {
     console.error("No MongoDB URI found Database will not work");
 }
 
-const authSecret = process.env.AUTH_SECRET;
-
-if (!authSecret) {
+if (!AUTH_SECRET) {
     console.error("No auth secret found Auth will not work");
 }
 
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-    let token = req.headers["authorization"];
+const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+    const token = req.headers["authorization"];
     if (!token) {
         return res.status(401).json({ error: "Unauthorized" });
     }
-    if (token.startsWith("Bearer ")) {
-        token = token.slice(7, token.length);
+    const user = await verifyJWT(token);
+    if (!user) {
+        return res.status(401).json({ error: "Unauthorized" });
     }
-
-    jwt.verify(token, authSecret!, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-        req["user"] = decoded;
-        next();
-    });
+    req["user"] = user;
+    next();
 };
 
 app.get("/holidays", async (req: Request, res: Response) => {
-    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
-    const ipres = await fetch(`http://ip-api.com/json/${clientIp}`);
-    const ip = (await ipres.json()) as Ip;
-
-    if (ip.status !== "success") {
-        if (ip.message) {
-            return res.status(400).json({ error: ip.message });
+    const year = (req.query.year ||
+        new Date().getFullYear().toString()) as string;
+    const { country } = req.query as { country: string };
+    if (country) {
+        const holidays = await getHolidays(country, year);
+        if (holidays) {
+            return res.status(200).json({ data: holidays });
         }
+    }
+    const user = await verifyJWT(req.headers["authorization"] as string);
+    if (user && user.country) {
+        const holidays = await getHolidays(user.country, year);
+        if (holidays) {
+            return res.status(200).json({ data: holidays });
+        }
+    }
+    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
+    const ip = await getIP(clientIp as string);
+    if (!ip) {
         return res.status(400).json({ error: "Failed to get location" });
     }
-    const country = ip.countryCode;
+    const countryCode = ip.countryCode;
 
-    const customCountries = Object.keys(customHolidays);
-
-    if (!customCountries.includes(country) && !countries.includes(country)) {
-        return res
-            .status(400)
-            .json({ error: "Sorry, we don't support this country" });
+    const holidays = await getHolidays(countryCode, year);
+    if (!holidays) {
+        return res.status(400).json({ error: "Failed to get holidays" });
     }
 
-    let { year } = req.query as {
-        year: string | number;
-    };
-
-    if (!year) {
-        return res.status(400).json({ error: "Year is required" });
-    }
-
-    try {
-        year = parseInt(year as string);
-    } catch {
-        return res.status(400).json({
-            error: "Year must be number",
-        });
-    }
-
-    if (year < 2000 || year > 2030) {
-        return res.status(400).json({
-            error: "Year must be between 2000 and 2030",
-        });
-    }
-
-    if (customCountries.includes(country)) {
-        const customCountry = customHolidays[country];
-        const years = Object.keys(customCountry);
-        if (!years.includes(year.toString())) {
-            return res.status(400).json({
-                error: "Year is not available",
-            });
-        }
-        return res.status(200).json(customCountry[year]);
-    }
-
-    const holidaysRes = await fetch(
-        `https://date.nager.at/api/v3/publicholidays/${year}/${country}`
-    );
-    const holidays = (await holidaysRes.json()) as Holiday[];
-
-    res.status(200).json(holidays);
+    res.status(200).json({ data: holidays });
 });
 
 app.get("/weather", async (req: Request, res: Response) => {
-    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
-    const ipres = await fetch(`http://ip-api.com/json/${clientIp}`);
-    const ip = (await ipres.json()) as Ip;
-
-    if (ip.status !== "success") {
-        if (ip.message) {
-            return res.status(400).json({ error: ip.message });
+    const { lat, lon, city, region } = req.query as {
+        lat: string;
+        lon: string;
+        city: string;
+        region: string;
+    };
+    if (lat && lon && city && region) {
+        const weather = await getWeather(lat, lon, city, region);
+        if (weather) {
+            return res.status(200).json({ data: weather });
         }
+    }
+    const user = await verifyJWT(req.headers["authorization"] as string);
+    if (user && user.latitude && user.longitude && user.city && user.region) {
+        const weather = await getWeather(
+            user.latitude,
+            user.longitude,
+            user.city,
+            user.region
+        );
+        if (weather) {
+            return res.status(200).json({ data: weather });
+        }
+    }
+    const clientIp = req.headers["x-forwarded-for"] || req.headers["x-real-ip"];
+    const ip = await getIP(clientIp as string);
+    if (!ip) {
         return res.status(400).json({ error: "Failed to get location" });
     }
-
-    const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${ip.lat}&longitude=${ip.lon}&current=temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min`
-    );
-    const weather = (await weatherRes.json()) as Weather;
-    const w = weathers[weather.current.weather_code] || "";
-
-    if (weather.error) {
+    const weather = await getWeather(ip.lat, ip.lon, ip.city, ip.regionName);
+    if (!weather) {
         return res.status(400).json({ error: "Failed to get weather" });
     }
+    res.status(200).json({ data: weather });
+});
 
-    const currentDate = new Date().toISOString().split("T")[0];
-    const index = weather.daily.time.indexOf(currentDate);
-
-    res.status(200).json({
-        temperature: `${weather.current.temperature_2m} ${weather.current_units.temperature_2m}`,
-        apparent_temperature: `${weather.current.apparent_temperature} ${weather.current_units.temperature_2m}`,
-        weather: w,
-        wind_speed: `${weather.current.wind_speed_10m} ${weather.current_units.wind_speed_10m}`,
-        humidity: `${weather.current.relative_humidity_2m} ${weather.current_units.relative_humidity_2m}`,
-        temp_max: `${weather.daily.temperature_2m_max[index]} ${weather.daily_units.temperature_2m_max}`,
-        temp_min: `${weather.daily.temperature_2m_min[index]} ${weather.daily_units.temperature_2m_min}`,
-        city: ip.city,
-        region: ip.regionName,
-        weekly: weather.daily.time.map((time, i) => ({
-            time,
-            max: `${weather.daily.temperature_2m_max[i]}`,
-            min: `${weather.daily.temperature_2m_min[i]}`,
-        })),
-    });
+app.get("/cities", async (req: Request, res: Response) => {
+    const { country, region } = req.query as {
+        country: string;
+        region: string;
+    };
+    if (!country) {
+        const countries = await getCountries();
+        if (!countries) {
+            return res.status(400).json({ error: "Failed to get countries" });
+        }
+        return res.status(200).json({ data: countries });
+    }
+    if (!region) {
+        const regions = await getRegions(country);
+        if (!regions) {
+            return res.status(400).json({ error: "Failed to get regions" });
+        }
+        return res.status(200).json({ data: regions });
+    }
+    const cities = await getCities(country, region);
+    if (!cities) {
+        return res.status(400).json({ error: "Failed to get cities" });
+    }
+    res.status(200).json({ data: cities });
 });
 
 app.post(
@@ -203,44 +194,37 @@ app.post(
             const data = response.split("```")[1].replace("json", "");
             const json = JSON.parse(data) as EventResponse[];
 
-            if (req.headers["authorization"]) {
-                try {
-                    let token = req.headers["authorization"] as string;
-                    if (token.startsWith("Bearer ")) {
-                        token = token.slice(7, token.length);
-                    }
-                    const decoded = jwt.verify(token, authSecret!) as {
-                        email: string;
-                        id: string;
-                    };
-                    for (const event of json) {
-                        if (event.date) {
-                            const ev = await Event.findOne({
-                                date: new Date(event.date),
-                                event: event.event,
-                                userId: decoded.id,
-                            });
-                            if (ev) {
-                                continue;
-                            }
-                            await Event.create({
-                                date: new Date(event.date),
-                                event: event.event,
-                                userId: decoded.id,
-                            });
+            const user = await verifyJWT(
+                req.headers["authorization"] as string
+            );
+            if (!user) {
+                return res
+                    .status(200)
+                    .json({ authenticated: false, data: json });
+            } else {
+                for (const event of json) {
+                    if (event.date) {
+                        const ev = await Event.findOne({
+                            date: new Date(event.date),
+                            event: event.event,
+                            userId: user.id,
+                        });
+                        if (ev) {
+                            continue;
                         }
+                        await Event.create({
+                            date: new Date(event.date),
+                            event: event.event,
+                            userId: user.id,
+                        });
                     }
-
-                    const events = await Event.find({ userId: decoded.id });
-                    return res
-                        .status(200)
-                        .json({ authenticated: false, events });
-                } catch (error) {
-                    console.error(error);
                 }
-            }
 
-            return res.status(200).json({ authenticated: false, events: json });
+                const events = await Event.find({ userId: user.id });
+                return res
+                    .status(200)
+                    .json({ authenticated: true, data: events });
+            }
         } catch (error) {
             console.log(error);
             return res.status(400).json({ error: "Failed to parse image" });
@@ -249,28 +233,37 @@ app.post(
 );
 
 app.get("/events", verifyToken, async (req, res) => {
+    if (!MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
     try {
         const events = await Event.find({ userId: req["user"].id });
-        res.status(200).json({ events });
+        res.status(200).json({ data: events });
     } catch {
         res.status(500).json({ error: "Internal server error" });
     }
 });
 
 app.post("/events", verifyToken, async (req, res) => {
+    if (!MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
     try {
         const event = await Event.create({
             date: req.body.date,
             event: req.body.event,
             userId: req["user"].id,
         });
-        res.status(201).json({ event });
+        res.status(201).json({ data: event });
     } catch {
         res.status(500).json({ error: "Internal server error" });
     }
 });
 
 app.delete("/events/:id", verifyToken, async (req, res) => {
+    if (!MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
     try {
         const event = await Event.findOne({
             _id: req.params.id,
@@ -287,15 +280,23 @@ app.delete("/events/:id", verifyToken, async (req, res) => {
 });
 
 app.post("/auth/register", async (req: Request, res: Response) => {
+    if (!AUTH_SECRET || !MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+    const email = req.body.email as string;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Invalid email" });
+    }
     try {
-        const existingUser = await User.findOne({ email: req.body.email });
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: "Email already exists" });
         }
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         await User.create({
-            email: req.body.email,
+            email,
             password: hashedPassword,
         });
 
@@ -308,6 +309,9 @@ app.post("/auth/register", async (req: Request, res: Response) => {
 });
 
 app.post("/auth/login", async (req, res) => {
+    if (!AUTH_SECRET || !MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
     try {
         const user = await User.findOne({ email: req.body.email });
         if (!user) {
@@ -323,8 +327,16 @@ app.post("/auth/login", async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: user.email, id: user._id.toString() },
-            authSecret!,
+            {
+                email: user.email,
+                id: user._id.toString(),
+                city: user.city,
+                region: user.region,
+                country: user.country,
+                latitude: user.latitude,
+                longitude: user.longitude,
+            },
+            AUTH_SECRET,
             { expiresIn: "30d" }
         );
         res.status(200).json({ token });
@@ -335,6 +347,43 @@ app.post("/auth/login", async (req, res) => {
 
 app.get("/auth/user", verifyToken, async (req, res) => {
     res.status(200).json(req["user"]);
+});
+
+app.put("/auth/user", verifyToken, async (req, res) => {
+    if (!AUTH_SECRET || !MONGODB_URI) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+    try {
+        const user = await User.findOne({ email: req["user"].email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        user.city = req.body.city;
+        user.region = req.body.region;
+        user.country = req.body.country;
+        user.latitude = req.body.latitude;
+        user.longitude = req.body.longitude;
+        await user.save();
+        const token = jwt.sign(
+            {
+                email: user.email,
+                id: user._id.toString(),
+                city: user.city,
+                region: user.region,
+                country: user.country,
+                latitude: user.latitude,
+                longitude: user.longitude,
+            },
+            AUTH_SECRET,
+            { expiresIn: "30d" }
+        );
+        res.status(200).json({
+            message: "User updated successfully",
+            data: { token },
+        });
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 ViteExpress.listen(app, 3000, () =>

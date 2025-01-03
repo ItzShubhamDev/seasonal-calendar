@@ -46,4 +46,14 @@ export type Weather = {
 export type Event = {
     date: string | null;
     event: string;
-}
+};
+
+export type Region = Record<
+    string,
+    {
+        name: string;
+        latitude: string;
+        longitude: string;
+        country: string;
+    }
+>;

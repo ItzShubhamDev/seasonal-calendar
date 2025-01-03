@@ -1,6 +1,7 @@
 import { Droplet, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { fetch } from "../functions";
 
 const weatherData = [
     {
@@ -89,26 +90,42 @@ type WeatherData = {
     }[];
 };
 
-const Weather = () => {
+type User = {
+    city: string;
+    region: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+};
+
+const Weather = ({ user }: { user: User }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
     const [icon, setIcon] = useState<string | null>("Sun%20Behind%20Cloud.png");
 
     useEffect(() => {
-        fetch("/weather")
-            .then((res) => res.json())
-            .then((data) => {
+        const getWeather = async () => {
+            try {
+                const params =
+                    user.city !== ""
+                        ? `?lat=${user.latitude}&lon=${user.longitude}&city=${user.city}&region=${user.region}`
+                        : "";
+                const url = `/weather${params}`;
+                const res = await fetch(url);
+                const data = await res.json();
                 if (data.error) return toast.error(data.error);
-                setWeather(data);
+                console.log(url, data.data);
+                setWeather(data.data);
                 setLoading(false);
-            })
-            .catch(() => {
+            } catch {
                 toast.error(
                     "An error occurred while fetching the weather data"
                 );
                 setLoading(false);
-            });
-    }, []);
+            }
+        };
+        getWeather();
+    }, [user]);
 
     useEffect(() => {
         if (weather) {

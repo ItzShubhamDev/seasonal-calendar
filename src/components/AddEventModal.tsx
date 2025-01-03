@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import { toast } from "react-toastify";
+import { fetch } from "../functions";
 
 type Event = {
     date: string;
@@ -27,7 +28,6 @@ export default function AddEventModal({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
                 body: JSON.stringify({ event, date }),
             });
@@ -72,7 +72,7 @@ export default function AddEventModal({
                 />
                 <button
                     type="submit"
-                    className="hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                    className="w-full hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
                 >
                     Add Event
                 </button>
