@@ -4,8 +4,9 @@ import Modal from "./Modal";
 import AddEventModal from "./AddEventModal";
 import { toast } from "react-toastify";
 import { fetch } from "../functions";
+import ThemeToggle from "./ToggleTheme";
 
-type Holiday = {
+export type Holiday = {
     date: string;
     name: string;
     types: string[];
@@ -25,9 +26,18 @@ type User = {
     longitude: number;
 };
 
-const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
+const Holidays = ({
+    date,
+    user,
+    holidays,
+    setHolidays,
+}: {
+    date: Date;
+    user: User | null;
+    holidays: Holiday[];
+    setHolidays: React.Dispatch<React.SetStateAction<Holiday[]>>;
+}) => {
     const [loading, setLoading] = useState(true);
-    const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [hidden, setHidden] = useState(true);
     const [events, setEvents] = useState<Event[]>([]);
     const [open, setOpen] = useState(false);
@@ -175,30 +185,36 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
 
     return (
         <div
-            className={`flex max-w-64 w-full h-screen flex-col max-lg:fixed z-20 max-lg:bg-gray-900 p-4 ease-in-out duration-300 lg:translate-x-0 ${
+            className={`flex max-w-64 w-full h-screen flex-col max-lg:fixed z-20 max-lg:bg-gray-100 dark:max-lg:bg-gray-900 p-4 ease-in-out duration-300 lg:translate-x-0 ${
                 hidden ? "-translate-x-64" : "translate-x-0"
             }`}
         >
+            <div className="flex items-center justify-between">
+                <span className="text-2xl font-medium text-gray-800 dark:text-gray-100 text-center">
+                    Calendar
+                </span>
+                <ThemeToggle />
+            </div>
             <button
                 onClick={() => setHidden(!hidden)}
-                className="lg:hidden absolute top-1/2 right-0 translate-x-full py-2 bg-gray-900 rounded-tr-full rounded-br-full text-white"
+                className="lg:hidden absolute top-1/2 right-0 translate-x-full py-2 bg-gray-100 dark:bg-gray-900 rounded-tr-full rounded-br-full text-gray-800 dark:text-white"
             >
                 {hidden ? <ChevronRight /> : <ChevronLeft />}
             </button>
             {loading ? (
                 <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-700"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-300 dark:border-gray-700"></div>
                 </div>
             ) : (
-                <>
+                <div className="flex flex-col w-full mt-2">
                     <div className="w-full flex flex-col h-1/2">
                         <div className="w-full flex justify-between">
-                            <span className="text-2xl font-medium text-gray-100 text-center">
+                            <span className="text-2xl font-medium text-gray-900 dark:text-gray-100 text-center">
                                 Events
                             </span>
                             <button
                                 onClick={upload}
-                                className="hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                                className="hover:border-gray-900 dark:hover:border-gray-100 transition-colors dark:text-gray-100 text-gray-900 border-2 border-gray-600 dark:border-gray-400 rounded-full px-4 py-1"
                             >
                                 Upload
                             </button>
@@ -212,16 +228,16 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
                         />
                         <div className="flex-grow overflow-y-scroll my-2">
                             {monthlyEvents.length === 0 ? (
-                                <p className="text-gray-100 text-center">
+                                <p className="text-gray-900 dark:text-gray-100 text-center">
                                     No events for this month
                                 </p>
                             ) : (
                                 monthlyEvents.map((event, i) => (
                                     <div key={i} className="py-2">
-                                        <p className="text-lg font-medium text-gray-100">
+                                        <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
                                             {event.event}
                                         </p>
-                                        <p className="text-sm text-gray-400">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
                                             {event.date.includes("T")
                                                 ? event.date.split("T")[0]
                                                 : event.date}
@@ -231,7 +247,7 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
                             )}
                         </div>
                         <button
-                            className="hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                            className=" hover:border-gray-900 dark:hover:border-gray-100 transition-colors text-gray-900 dark:text-gray-100 border-2 border-gray-600 dark:border-gray-400 rounded-full px-4 py-1"
                             onClick={() => setOpen(true)}
                         >
                             View All Events
@@ -239,24 +255,24 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
                     </div>
                     <div className="w-full flex flex-col h-1/2 mt-2">
                         <div className="w-full flex justify-between">
-                            <span className="text-2xl font-medium text-gray-100 text-center">
+                            <span className="text-2xl font-medium text-gray-900 dark:text-gray-100 text-center">
                                 Holidays
                             </span>
                         </div>
                         <div className="flex-grow overflow-y-scroll">
                             {holidays.map((holiday, i) => (
                                 <div key={i} className="py-2">
-                                    <p className="text-lg font-medium text-gray-100">
+                                    <p className="text-lg font-mediumtext-gray-900 dark:text-gray-100">
                                         {holiday.name}
                                     </p>
-                                    <p className="text-sm text-gray-400">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
                                         {holiday.date}
                                     </p>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </>
+                </div>
             )}
             <Modal
                 title="All Events"
@@ -270,7 +286,7 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
                         </p>
                     ) : (
                         <table className="w-full">
-                            <thead className="sticky top-0 bg-gray-700">
+                            <thead className="sticky top-0 bg-gray-300 dark:bg-gray-700">
                                 <tr>
                                     <th>Date</th>
                                     <th>Event</th>
@@ -305,7 +321,7 @@ const Holidays = ({ date, user }: { date: Date; user: User | null }) => {
                     )}
                 </div>
                 <button
-                    className="w-full hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                    className="w-full  hover:border-gray-900 dark:hover:border-gray-100 transition-colors text-gray-900 dark:text-gray-100 border-2 border-gray-600 dark:border-gray-400 rounded-full px-4 py-1"
                     onClick={() => setAdd(true)}
                 >
                     Add Event

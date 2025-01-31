@@ -17,7 +17,7 @@ type ParticlesProps = {
 
 const Particles = ({ season }: { season: string }) => {
     const [props, setProps] = useState<ParticlesProps>({
-        snowflakeCount: 150,
+        snowflakeCount: 100,
         speed: [0.5, 1.5],
         wind: [-0.5, 2],
         radius: [20, 25],

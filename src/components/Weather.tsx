@@ -139,12 +139,12 @@ const Weather = ({ user }: { user: User | null }) => {
             {loading ? (
                 <>
                     <div className="w-full flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-700"></div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-300 dark:border-gray-700"></div>
                     </div>
                 </>
             ) : (
                 <>
-                    <div className="h-full lg:max-w-sm flex w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
+                    <div className="h-full lg:max-w-sm flex w-full bg-gray-300 dark:bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
                         <div>
                             <div className="flex items-center justify-between">
                                 <div className="text-4xl font-bold text-yellow-300">
@@ -152,7 +152,7 @@ const Weather = ({ user }: { user: User | null }) => {
                                 </div>
                             </div>
 
-                            <div className="mt-4 space-y-2 text-sm text-gray-100">
+                            <div className="mt-4 space-y-2 text-sm text-gray-900 dark:text-gray-100">
                                 <div className="flex items-center">
                                     <Droplet
                                         size={16}
@@ -179,7 +179,7 @@ const Weather = ({ user }: { user: User | null }) => {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex-grow flex flex-col items-end text-white">
+                        <div className="flex-grow flex flex-col items-end text-gray-800 dark:text-white">
                             <span className="text-lg font-semibold truncate max-w-52">
                                 {weather?.city}, {weather?.region}
                             </span>
@@ -197,12 +197,12 @@ const Weather = ({ user }: { user: User | null }) => {
                             </span>
                         </div>
                     </div>
-                    <div className="h-full lg:max-w-xl flex flex-col space-y-4 w-full bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
-                        <h1 className="text-2xl font-medium text-gray-100 text-center">
+                    <div className="h-full lg:max-w-xl flex flex-col space-y-4 w-full bg-gray-300 dark:bg-gray-700 shadow-lg rounded-lg overflow-hidden p-4">
+                        <h1 className="text-2xl font-mediumtext-gray-900 dark:text-gray-100 text-center">
                             Weekly Forecast
                         </h1>
                         <div className="w-full flex h-full">
-                            <div className="text-gray-100 w-full text-center flex flex-col space-y-2">
+                            <div className="text-gray-800 dark:text-gray-100 w-full text-center flex flex-col space-y-2">
                                 <span className="text-md font-medium ">
                                     Day
                                 </span>
@@ -212,10 +212,10 @@ const Weather = ({ user }: { user: User | null }) => {
                             {weather?.weekly.map((day, i) => (
                                 <div
                                     key={`time-${i}`}
-                                    className={`text-gray-100 w-full text-center flex flex-col space-y-2 ${
+                                    className={`text-gray-800 dark:text-gray-100 w-full text-center flex flex-col space-y-2 ${
                                         new Date(day.time).getDay() ===
                                         new Date().getUTCDay()
-                                            ? "bg-gray-100/10 rounded-lg"
+                                            ? "bg-gray-900/10 dark:bg-gray-100/10 rounded-lg"
                                             : ""
                                     }`}
                                 >

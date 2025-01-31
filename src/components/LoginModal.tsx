@@ -80,7 +80,7 @@ export default function LoginModal({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                    className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                 />
                 <input
                     type="password"
@@ -88,7 +88,7 @@ export default function LoginModal({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                    className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                 />
                 {type === "register" && (
                     <input
@@ -97,7 +97,7 @@ export default function LoginModal({
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                        className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                     />
                 )}
                 <div className="flex justify-between py-2">
@@ -114,7 +114,7 @@ export default function LoginModal({
                     </button>
                     <button
                         type="submit"
-                        className="hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                        className=" hover:border-gray-900 dark:hover:border-gray-100 transition-colors text-gray-900 dark:text-gray-100 border-2 border-gray-600 dark:border-gray-400 rounded-full px-4 py-1"
                     >
                         {type === "login" ? "Login" : "Register"}
                     </button>

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
 import Calendar from "./components/Calendar";
-import Holidays from "./components/Holidays";
+import Holidays, { Holiday } from "./components/Holidays";
 import Weather from "./components/Weather";
 import Clock from "./components/Clock";
 import LoginModal from "./components/LoginModal";
 import { LogIn, X } from "lucide-react";
 import UpdateUser from "./components/UpdateUser";
+import Quote from "./components/Quote";
+import Photo from "./components/PhotoOfTheDay";
 
 type User = {
     city: string;
@@ -21,6 +23,7 @@ function App() {
     const [alert, setAlert] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const [holidays, setHolidays] = useState<Holiday[]>([]);
 
     useEffect(() => {
         try {
@@ -48,14 +51,29 @@ function App() {
     }, []);
 
     return (
-        <div className="lg:flex bg-gray-800">
-            <Holidays date={date} user={user} />
+        <div className="lg:flex bg-gray-200 dark:bg-gray-800">
+            <Holidays
+                date={date}
+                user={user}
+                holidays={holidays}
+                setHolidays={setHolidays}
+            />
             <div className="min-h-screen flex flex-col flex-grow p-5 lg:p-0 space-y-5 lg:space-y-0">
                 <div className="h-full w-full lg:flex items-center lg:p-5 lg:pl-0 space-y-5 lg:space-y-0 lg:space-x-5 lg:flex-grow">
                     <Weather user={user} />
                     <Clock />
                 </div>
-                <Calendar date={date} setDate={setDate} />
+                <div className="flex max-xl:flex-col lg:mr-4 xl:mr-0">
+                    <Calendar
+                        date={date}
+                        setDate={setDate}
+                        holidays={holidays}
+                    />
+                    <div className="max-xl:w-full xl:min-w-72 xl:max-w-80 xl:mx-4 max-xl:mt-4 flex flex-col sm:flex-row xl:flex-col sm:space-x-4 xl:space-x-0 max-sm:space-y-6 xl:space-y-6">
+                        <Quote />
+                        <Photo />
+                    </div>
+                </div>
             </div>
             <div
                 className={`fixed z-100 bottom-0 inset-x-0 p-5 ease-out duration-500 ${
@@ -86,7 +104,9 @@ function App() {
                 pauseOnFocusLoss={false}
                 pauseOnHover={false}
                 theme="dark"
-                toastClassName={"bg-gray-800 text-white"}
+                toastClassName={
+                    "bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-white"
+                }
             />
         </div>
     );

@@ -1,14 +1,15 @@
 {
     "name": "seasonal-calendar",
     "private": true,
-    "version": "2.0.0",
+    "version": "3.0.0",
     "type": "module",
     "scripts": {
         "dev": "tsx watch --exclude ./*.mjs ./server.ts",
         "build": "vite build",
         "start": "cross-env NODE_ENV=production tsx server.ts",
         "lint": "eslint .",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "generate-pwa-assets": "pwa-assets-generator --preset minimal public/icon.svg"
     },
     "dependencies": {
         "@google/generative-ai": "^0.21.0",
@@ -19,12 +20,14 @@
         "lucide-react": "^0.344.0",
         "mongoose": "^8.9.3",
         "multer": "1.4.5-lts.1",
+        "next-themes": "^0.4.4",
         "node-cron": "^3.0.3",
         "nodemailer": "^6.9.16",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-snowfall": "^2.2.0",
         "react-toastify": "^11.0.2",
+        "react-tooltip": "^5.28.0",
         "vite-express": "^0.19.0"
     },
     "devDependencies": {
@@ -37,6 +40,7 @@
         "@types/nodemailer": "^6.4.17",
         "@types/react": "^18.3.5",
         "@types/react-dom": "^18.3.0",
+        "@vite-pwa/assets-generator": "^0.2.6",
         "@vitejs/plugin-react": "^4.3.1",
         "autoprefixer": "^10.4.18",
         "cross-env": "^7.0.3",
@@ -49,6 +53,7 @@
         "tsx": "^4.19.2",
         "typescript": "^5.5.3",
         "typescript-eslint": "^8.3.0",
-        "vite": "^5.4.2"
+        "vite": "^5.4.14",
+        "vite-plugin-pwa": "^0.21.1"
     }
 }

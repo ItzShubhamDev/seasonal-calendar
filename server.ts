@@ -29,7 +29,7 @@ let ai: GenerativeModel;
 const app = express();
 app.use(express.json());
 
-const { GEMINI_KEY, MONGODB_URI, AUTH_SECRET } = process.env;
+const { GEMINI_KEY, MONGODB_URI, AUTH_SECRET, NASA_API_KEY } = process.env;
 
 if (GEMINI_KEY) {
     const genAI = new GoogleGenerativeAI(GEMINI_KEY);
@@ -53,6 +53,10 @@ if (MONGODB_URI) {
 
 if (!AUTH_SECRET) {
     console.error("No auth secret found Auth will not work");
+}
+
+if (!NASA_API_KEY) {
+    console.error("No NASA API key found Astronomy photo will not work");
 }
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
@@ -232,6 +236,32 @@ app.post(
         }
     }
 );
+
+app.get("/quotes", async (_req: Request, res: Response) => {
+    const r = await fetch(
+        "https://thequoteshub.com/api/random-quote?format=json",
+        {
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+        }
+    );
+    const data = await r.json();
+    res.status(200).json(data);
+});
+
+app.get("/apod", async (_req: Request, res: Response) => {
+    try {
+        const r = await fetch(
+            `https://api.nasa.gov/planetary/apod?api_key=${NASA_API_KEY}`
+        );
+        const data = await r.json();
+        res.status(200).json(data);
+    } catch {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 app.get("/events", verifyToken, async (req, res) => {
     if (!MONGODB_URI) {

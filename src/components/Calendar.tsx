@@ -6,6 +6,8 @@ import summer from "../images/backgrounds/summer.jpg";
 import monsoon from "../images/backgrounds/monsoon.jpg";
 import autumn from "../images/backgrounds/autumn.jpg";
 import winter from "../images/backgrounds/winter.jpg";
+import { Holiday } from "./Holidays";
+import { Tooltip } from "react-tooltip";
 
 const getSeason = (month: number) => {
     if (month >= 2 && month <= 3) return "spring";
@@ -35,13 +37,16 @@ const seasonImages = {
 const Calendar = ({
     date,
     setDate,
+    holidays,
 }: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
+    holidays: Holiday[];
 }) => {
     const [monthArray, setMonthArray] = useState<number[][]>([]);
     const month = date.getMonth();
     const year = date.getFullYear();
+    const [holidayDates, setHolidayDates] = useState<Date[]>([]);
 
     useEffect(() => {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -52,6 +57,10 @@ const Calendar = ({
         ) as number[];
         setMonthArray(breakMonthintoDays(monthArray));
     }, [date, year, month]);
+
+    useEffect(() => {
+        setHolidayDates(holidays.map((holiday) => new Date(holiday.date)));
+    }, [holidays]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -103,9 +112,32 @@ const Calendar = ({
         setDate(new Date(year, month + 1));
     };
 
+    const getHoliday = (day: number) => {
+        return holidays.find(
+            (holiday) =>
+                new Date(holiday.date).getDate() === day &&
+                new Date(holiday.date).getMonth() === month &&
+                new Date(holiday.date).getFullYear() === year
+        );
+    };
+
+    const isHoliday = (day: number) => {
+        return holidayDates.some(
+            (holidayDate) => holidayDate.getDate() === day
+        );
+    };
+
+    const isToday = (day: number, month: number, year: number) => {
+        return (
+            day === new Date().getDate() &&
+            month === new Date().getMonth() &&
+            year === new Date().getFullYear()
+        );
+    };
+
     return (
         <div
-            className="md:p-8 p-4 lg:m-0 lg:w-full h-full rounded-lg lg:rounded-none lg:rounded-tl-2xl"
+            className="md:p-8 p-4 lg:m-0 lg:w-full h-full rounded-lg lg:rounded-none lg:rounded-t-2xl"
             style={{
                 backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${seasonImages[season]})`,
                 backgroundSize: "cover",
@@ -163,22 +195,29 @@ const Calendar = ({
                             <tr key={index}>
                                 {week.map((day, index) => (
                                     <td key={index} className="sm:py-2">
+                                        {isHoliday(day) && (
+                                            <Tooltip id={`holiday-${day}`} />
+                                        )}
                                         <div
                                             className={
                                                 "size-6 sm:size-8 lg:size-10 rounded-full mx-auto flex items-center justify-center " +
                                                 `${
-                                                    day ===
-                                                        new Date().getDate() &&
-                                                    month ===
-                                                        new Date().getMonth() &&
-                                                    year ===
-                                                        new Date().getFullYear()
+                                                    isToday(day, month, year)
                                                         ? "bg-red-700/80"
                                                         : day
                                                         ? "bg-gray-700/50"
                                                         : ""
+                                                } ${
+                                                    isHoliday(day)
+                                                        ? "bg-yellow-700/80 hover:cursor-pointer"
+                                                        : ""
                                                 }`
                                             }
+                                            data-tooltip-id={`holiday-${day}`}
+                                            data-tooltip-content={
+                                                getHoliday(day)?.name
+                                            }
+                                            data-tooltip-offset={4}
                                         >
                                             <p className="text-sm sm:text-lg lg:text-2xl font-medium text-gray-100">
                                                 {day}
@@ -188,6 +227,15 @@ const Calendar = ({
                                 ))}
                             </tr>
                         ))}
+                        {monthArray.length < 5 && (
+                            <tr>
+                                {Array.from({ length: 7 }).map((_, index) => (
+                                    <td key={index} className="lg:py-2">
+                                        <div className="size-6 sm:size-8 lg:size-10 rounded-full mx-auto"></div>
+                                    </td>
+                                ))}
+                            </tr>
+                        )}
                         {monthArray.length < 6 && (
                             <tr>
                                 {Array.from({ length: 7 }).map((_, index) => (

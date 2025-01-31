@@ -144,7 +144,7 @@ export default function UpdateUser({
                 <form onSubmit={handleSubmit} className="space-y-2">
                     <div className="flex items-center space-x-2">
                         <select
-                            className="w-1/3 p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                            className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                             value={internalUser.country}
                             onChange={(e) => setCountry(e.target.value)}
                         >
@@ -155,7 +155,7 @@ export default function UpdateUser({
                             ))}
                         </select>
                         <select
-                            className="w-1/3 p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                            className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                             value={internalUser.region}
                             onChange={(e) => setRegion(e.target.value)}
                         >
@@ -166,7 +166,7 @@ export default function UpdateUser({
                             ))}
                         </select>
                         <select
-                            className="w-1/3 p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                            className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                             value={internalUser.city}
                             onChange={(e) =>
                                 setCityName(e.target.value as string)
@@ -181,7 +181,7 @@ export default function UpdateUser({
                     </div>
                     <input
                         type="number"
-                        className="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                        className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                         placeholder="Latitude"
                         step={0.0001}
                         value={internalUser.latitude}
@@ -194,7 +194,7 @@ export default function UpdateUser({
                     />
                     <input
                         type="number"
-                        className="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none"
+                        className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                         placeholder="Longitude"
                         step={0.0001}
                         value={internalUser.longitude}
@@ -207,7 +207,7 @@ export default function UpdateUser({
                     />
                     <button
                         type="submit"
-                        className="w-full hover:border-gray-100 transition-colors text-gray-100 border-2 border-gray-400 rounded-full px-4 py-1"
+                        className="w-full  hover:border-gray-900 dark:hover:border-gray-100 transition-colors text-gray-900 dark:text-gray-100 border-2 border-gray-600 dark:border-gray-400 rounded-full px-4 py-1"
                     >
                         Update User
                     </button>
@@ -219,7 +219,7 @@ export default function UpdateUser({
                 }`}
                 onClick={handleClick}
             >
-                <Settings className="h-8 w-8 text-white" />
+                <Settings className="h-8 w-8 text-gray-800 dark:text-white" />
             </button>
         </>
     );
