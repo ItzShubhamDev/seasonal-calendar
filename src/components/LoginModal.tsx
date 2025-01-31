@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import { toast } from "react-toastify";
+import { signIn } from "next-auth/react";
 
 export default function LoginModal({
     open,
@@ -15,25 +16,10 @@ export default function LoginModal({
     const [type, setType] = useState<"login" | "register">("login");
 
     const login = async () => {
-        try {
-            const res = await fetch("/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password }),
-            });
-            if (res.status === 200) {
-                onClose();
-                const { token } = await res.json();
-                localStorage.setItem("token", token);
-                toast.success("Logged in successfully");
-            } else {
-                toast.error("An error occurred while logging in");
-            }
-        } catch {
-            alert("An error occurred while logging in");
-        }
+        await signIn("credentials", {
+            email,
+            password,
+        });
     };
 
     const register = async () => {
@@ -42,7 +28,7 @@ export default function LoginModal({
             return;
         }
         try {
-            const res = await fetch("/auth/register", {
+            const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

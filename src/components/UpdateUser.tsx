@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import { toast } from "react-toastify";
-import { fetch } from "../functions";
 import { Settings } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 type City = {
     name: string;
@@ -19,13 +19,7 @@ type User = {
     longitude: number;
 };
 
-export default function UpdateUser({
-    user,
-    setUser,
-}: {
-    user: User;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-}) {
+export default function UpdateUser({ user }: { user: User }) {
     const [internalUser, setInternalUser] = useState(user);
     const [spinning, setSpinning] = useState(false);
     const [open, setOpen] = useState(false);
@@ -36,6 +30,7 @@ export default function UpdateUser({
     const [countries, setCountries] = useState([]);
     const [regions, setRegions] = useState([]);
     const [cities, setCities] = useState<City[]>([]);
+    const { update } = useSession();
 
     useEffect(() => {
         if (!user || user.city === "") return;
@@ -46,10 +41,10 @@ export default function UpdateUser({
 
     useEffect(() => {
         const getCountries = async () => {
-            const res = await fetch("/cities");
+            const res = await fetch("/api/cities");
             if (res.status === 200) {
                 const data = await res.json();
-                setCountries(data.data);
+                setCountries(data);
             }
         };
         getCountries();
@@ -58,11 +53,11 @@ export default function UpdateUser({
     useEffect(() => {
         const getRegions = async () => {
             if (country === "") return;
-            const res = await fetch(`/cities?country=${country}`);
+            const res = await fetch(`/api/cities?country=${country}`);
             if (res.status === 200) {
                 const data = await res.json();
-                setRegions(data.data);
-                if (!data.data.includes(region)) setRegion(data.data[0]);
+                setRegions(data);
+                if (!data.includes(region)) setRegion(data[0]);
             }
         };
         getRegions();
@@ -72,17 +67,16 @@ export default function UpdateUser({
         const getCities = async () => {
             if (country === "" || region === "") return;
             const res = await fetch(
-                `/cities?country=${country}&region=${region}`
+                `/api/cities?country=${country}&region=${region}`
             );
             if (res.status === 200) {
-                const data = (await res.json()) as { data: City[] };
-                setCities(data.data);
-                if (!data.data.find((city) => city.name === cityName))
-                    setCityName(data.data[0].name);
+                const data = (await res.json()) as City[];
+                setCities(data);
+                if (!data.find((city) => city.name === cityName))
+                    setCityName(data[0].name);
             }
         };
         getCities();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [country, region]);
 
     useEffect(() => {
@@ -104,9 +98,8 @@ export default function UpdateUser({
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setUser(internalUser);
         try {
-            const res = await fetch("/auth/user", {
+            const res = await fetch("/api/auth/user", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -116,9 +109,8 @@ export default function UpdateUser({
             if (res.status === 200) {
                 setOpen(false);
                 setSpinning(false);
-                const { data } = await res.json();
-                localStorage.setItem("token", data.token);
-                toast.success("User updated successfully");
+                await update();
+                toast.success("User updated");
             } else {
                 toast.error("An error occurred while updating the user");
             }
@@ -126,6 +118,18 @@ export default function UpdateUser({
             toast.error("An error occurred while updating the user");
         }
     };
+
+    useEffect(() => {
+        const visibilityHandler = () =>
+            document.visibilityState === "visible" && update();
+        window.addEventListener("visibilitychange", visibilityHandler, false);
+        return () =>
+            window.removeEventListener(
+                "visibilitychange",
+                visibilityHandler,
+                false
+            );
+    }, [update]);
 
     const handleClick = () => {
         setSpinning(true);
@@ -145,7 +149,7 @@ export default function UpdateUser({
                     <div className="flex items-center space-x-2">
                         <select
                             className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
-                            value={internalUser.country}
+                            value={internalUser.country || ""}
                             onChange={(e) => setCountry(e.target.value)}
                         >
                             {countries.map((country) => (
@@ -156,7 +160,7 @@ export default function UpdateUser({
                         </select>
                         <select
                             className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
-                            value={internalUser.region}
+                            value={internalUser.region || ""}
                             onChange={(e) => setRegion(e.target.value)}
                         >
                             {regions.map((region) => (
@@ -167,7 +171,7 @@ export default function UpdateUser({
                         </select>
                         <select
                             className="w-1/3 p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
-                            value={internalUser.city}
+                            value={internalUser.city || ""}
                             onChange={(e) =>
                                 setCityName(e.target.value as string)
                             }
@@ -184,7 +188,7 @@ export default function UpdateUser({
                         className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                         placeholder="Latitude"
                         step={0.0001}
-                        value={internalUser.latitude}
+                        value={internalUser.latitude || ""}
                         onChange={(e) =>
                             setInternalUser((user) => ({
                                 ...user,
@@ -197,7 +201,7 @@ export default function UpdateUser({
                         className="w-full p-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none"
                         placeholder="Longitude"
                         step={0.0001}
-                        value={internalUser.longitude}
+                        value={internalUser.longitude || ""}
                         onChange={(e) =>
                             setInternalUser((user) => ({
                                 ...user,

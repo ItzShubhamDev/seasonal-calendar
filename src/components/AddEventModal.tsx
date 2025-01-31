@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
 import { toast } from "react-toastify";
-import { fetch } from "../functions";
 
 type Event = {
     date: string;
@@ -24,7 +23,7 @@ export default function AddEventModal({
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const res = await fetch("/events", {
+            const res = await fetch("/api/events", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

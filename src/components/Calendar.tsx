@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Particles from "./Particles";
-import spring from "../images/backgrounds/spring.jpg";
-import summer from "../images/backgrounds/summer.jpg";
-import monsoon from "../images/backgrounds/monsoon.jpg";
-import autumn from "../images/backgrounds/autumn.jpg";
-import winter from "../images/backgrounds/winter.jpg";
 import { Holiday } from "./Holidays";
 import { Tooltip } from "react-tooltip";
 
@@ -25,15 +20,6 @@ const breakMonthintoDays = (days: number[]) => {
 
     return weeks;
 };
-
-const seasonImages = {
-    spring,
-    summer,
-    monsoon,
-    autumn,
-    winter,
-};
-
 const Calendar = ({
     date,
     setDate,
@@ -47,6 +33,14 @@ const Calendar = ({
     const month = date.getMonth();
     const year = date.getFullYear();
     const [holidayDates, setHolidayDates] = useState<Date[]>([]);
+
+    const seasonImages = {
+        spring: "/backgrounds/spring.jpg",
+        summer: "/backgrounds/summer.jpg",
+        monsoon: "/backgrounds/monsoon.jpg",
+        autumn: "/backgrounds/autumn.jpg",
+        winter: "/backgrounds/winter.jpg",
+    };
 
     useEffect(() => {
         const daysInMonth = new Date(year, month + 1, 0).getDate();

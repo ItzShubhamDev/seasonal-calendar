@@ -18,7 +18,7 @@ const Photo = () => {
 
     useEffect(() => {
         const getPhoto = async () => {
-            const r = await fetch("/apod");
+            const r = await fetch("/api/apod");
             const data = await r.json();
             setPhoto(data);
         };

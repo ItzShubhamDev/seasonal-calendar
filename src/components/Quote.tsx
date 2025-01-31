@@ -11,7 +11,7 @@ const Quote = () => {
 
     useEffect(() => {
         const getQuote = async () => {
-            const r = await fetch("/quotes");
+            const r = await fetch("/api/quotes");
             const data = await r.json();
             if (data && data.text) {
                 if (data.text.length > 300) {

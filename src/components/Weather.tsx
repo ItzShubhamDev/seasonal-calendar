@@ -1,7 +1,6 @@
 import { Droplet, Wind } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { fetch } from "../functions";
 
 const weatherData = [
     {
@@ -98,7 +97,7 @@ type User = {
     longitude: number;
 };
 
-const Weather = ({ user }: { user: User | null }) => {
+const Weather = React.memo(({ user }: { user: User | null }) => {
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
     const [icon, setIcon] = useState<string | null>("Sun%20Behind%20Cloud.png");
@@ -109,11 +108,11 @@ const Weather = ({ user }: { user: User | null }) => {
                 const params = user
                     ? `?lat=${user.latitude}&lon=${user.longitude}&city=${user.city}&region=${user.region}`
                     : "";
-                const url = `/weather${params}`;
+                const url = `/api/weather${params}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 if (data.error) return toast.error(data.error);
-                setWeather(data.data);
+                setWeather(data);
                 setLoading(false);
             } catch {
                 toast.error(
@@ -232,6 +231,6 @@ const Weather = ({ user }: { user: User | null }) => {
             )}
         </>
     );
-};
+});
 
 export default Weather;

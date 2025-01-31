@@ -1,4 +1,4 @@
-# Seasonal Calendar 2
+# Seasonal Calendar 3 
 
 A Calendar with seasonal backgrounds, events, holidays, weather, weathers and ability to upload events from just an image.
 
